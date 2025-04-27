@@ -10,7 +10,12 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Time Tracker",
   description: "Track your time with ease",
-    generator: 'v0.dev'
+    generator: 'v0.dev',
+    icons: [
+      {
+        url: ""
+      }
+    ]
 }
 
 export default function RootLayout({
@@ -21,6 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}  cz-shortcut-listen="true">
+      <link rel="icon" href="/favicon.ico" sizes="any" />
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
           {children}
           <Toaster />
