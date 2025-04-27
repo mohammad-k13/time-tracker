@@ -11,11 +11,6 @@ export const metadata: Metadata = {
   title: "Time Tracker",
   description: "Track your time with ease",
     generator: 'v0.dev',
-    icons: [
-      {
-        url: ""
-      }
-    ]
 }
 
 export default function RootLayout({
