@@ -101,8 +101,8 @@ export function TimeEntriesTable() {
                         throw error;
                   }
 
-                  setEntries(data as any[] || []);
-                  setFilteredEntries(data as any[] || []);
+                  setEntries((data as any[]) || []);
+                  setFilteredEntries((data as any[]) || []);
             } catch (error: any) {
                   toast({
                         title: 'Error',
@@ -194,6 +194,8 @@ export function TimeEntriesTable() {
                   'End Date (Jalali)': entry.end_time ? toJalaliDate(entry.end_time) : '',
                   'Duration (HH:MM:SS)': formatTime(entry.duration),
                   Hours: secondsToHours(entry.duration),
+                  PerHours: `90,000 T`,
+                  Price: `${secondsToHours(entry.duration) * 90000} T`,
                   Status: entry.is_active ? 'Active' : 'Completed',
                   'Payment Status': entry.paid ? 'Paid' : 'Unpaid',
             }));
@@ -258,6 +260,7 @@ export function TimeEntriesTable() {
                                                 <TableHead className="hidden md:table-cell">Date (Jalali)</TableHead>
                                                 <TableHead>Duration</TableHead>
                                                 <TableHead className="hidden md:table-cell">Status</TableHead>
+                                                <TableHead>Price</TableHead>
                                                 <TableHead>Paid</TableHead>
                                                 <TableHead>Actions</TableHead>
                                           </TableRow>
@@ -317,6 +320,11 @@ export function TimeEntriesTable() {
                                                                               Completed
                                                                         </Badge>
                                                                   )}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                  <div className="text-xs text-muted-foreground">
+                                                                        {secondsToHours(entry.duration) * 90000} T
+                                                                  </div>
                                                             </TableCell>
                                                             <TableCell>
                                                                   <div className="flex items-center">
