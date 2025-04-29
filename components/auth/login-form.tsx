@@ -31,10 +31,6 @@ export function LoginForm() {
                   const { error } = await supabase.auth.signInWithPassword({
                         email,
                         password,
-                        options: {
-                              // Keep user logged in for 15 days
-                              expiresIn: 60 * 60 * 24 * 15,
-                        },
                   });
 
                   if (error) {
