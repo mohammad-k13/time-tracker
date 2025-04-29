@@ -41,12 +41,14 @@ export function TimerTracker() {
             const savedTimer = localStorage.getItem('timer');
             if (savedTimer) {
                   const parsedTimer = JSON.parse(savedTimer);
-                  setTimer(parsedTimer);
 
-                  // If timer was running when page was closed, resume it
-                  if (parsedTimer.isRunning) {
-                        startTimer(parsedTimer);
+                  // Recalculate elapsed time if the timer was running
+                  if (parsedTimer.isRunning && parsedTimer.startTime) {
+                        parsedTimer.elapsedTime = Date.now() - parsedTimer.startTime;
+                        resumeTimer(parsedTimer.startTime);
                   }
+
+                  setTimer(parsedTimer);
             }
       }, []);
 
@@ -54,6 +56,16 @@ export function TimerTracker() {
       useEffect(() => {
             localStorage.setItem('timer', JSON.stringify(timer));
       }, [timer]);
+
+      useEffect(() => {
+            if (timer.isRunning && timer.startTime) {
+                  resumeTimer(timer.startTime);
+            } else {
+                  if (intervalRef.current !== null) {
+                        clearInterval(intervalRef.current);
+                  }
+            }
+      }, [timer.isRunning]);
 
       // Get current user on component mount
       useEffect(() => {
@@ -68,6 +80,17 @@ export function TimerTracker() {
 
             getCurrentUser();
       }, [supabase]);
+
+      const resumeTimer = (startTime: number) => {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+
+            intervalRef.current = setInterval(() => {
+                  setTimer((prev) => ({
+                        ...prev,
+                        elapsedTime: Date.now() - startTime,
+                  }));
+            }, 1000);
+      };
 
       // Format time as HH:MM:SS
       const formatTime = (ms: number) => {
@@ -193,7 +216,7 @@ export function TimerTracker() {
                   if (data && data[0]) {
                         setTimer((prev) => ({
                               ...prev,
-                              id: data[0].id,
+                              id: data[0].id as string,
                         }));
 
                         toast({
