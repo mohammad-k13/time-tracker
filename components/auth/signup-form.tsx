@@ -37,8 +37,6 @@ export function SignupForm() {
                               data: {
                                     full_name: fullName,
                               },
-                              // Keep user logged in for 15 days
-                              expiresIn: 60 * 60 * 24 * 15,
                         },
                   });
 
