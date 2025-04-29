@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Download, Search, Check, X } from 'lucide-react';
+import { Download, Search, Check, X, Edit } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,8 @@ import { toJalaliDate, formatTime, secondsToHours } from '@/lib/date-utils';
 import { exportToCSV } from '@/lib/csv-utils';
 import { useToast } from '@/hooks/use-toast';
 import { TiptapContent } from '@/components/ui/tiptap-editor';
+import { TiptapEditor } from '@/components/ui/tiptap-editor';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface TimeEntry {
       id: string;
@@ -39,6 +41,10 @@ export function TimeEntriesTable() {
       const { toast } = useToast();
       const supabase = getSupabaseClient();
       const [userId, setUserId] = useState<string | null>(null);
+      const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
+      const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+      const [editTitle, setEditTitle] = useState('');
+      const [editDescription, setEditDescription] = useState('');
 
       useEffect(() => {
             const getCurrentUser = async () => {
@@ -95,8 +101,8 @@ export function TimeEntriesTable() {
                         throw error;
                   }
 
-                  setEntries(data || []);
-                  setFilteredEntries(data || []);
+                  setEntries((data as any[]) || []);
+                  setFilteredEntries((data as any[]) || []);
             } catch (error: any) {
                   toast({
                         title: 'Error',
@@ -132,6 +138,53 @@ export function TimeEntriesTable() {
             }
       };
 
+      const handleEditClick = (entry: TimeEntry) => {
+            setEditingEntry(entry);
+            setEditTitle(entry.title);
+            setEditDescription(entry.description || '');
+            setIsEditDialogOpen(true);
+      };
+
+      const handleSaveEdit = async () => {
+            if (!editingEntry) return;
+
+            try {
+                  const { error } = await supabase
+                        .from('time_entries')
+                        .update({
+                              title: editTitle,
+                              description: editDescription,
+                        })
+                        .eq('id', editingEntry.id);
+
+                  if (error) {
+                        throw error;
+                  }
+
+                  // Update local state
+                  setEntries(
+                        entries.map((entry) =>
+                              entry.id === editingEntry.id
+                                    ? { ...entry, title: editTitle, description: editDescription }
+                                    : entry,
+                        ),
+                  );
+
+                  toast({
+                        title: 'Entry updated',
+                        description: 'Your changes have been saved.',
+                  });
+
+                  setIsEditDialogOpen(false);
+            } catch (error: any) {
+                  toast({
+                        title: 'Error',
+                        description: error.message || 'Failed to update entry.',
+                        variant: 'destructive',
+                  });
+            }
+      };
+
       const handleExportCSV = () => {
             // Prepare data for export
             const exportData = filteredEntries.map((entry) => ({
@@ -141,6 +194,8 @@ export function TimeEntriesTable() {
                   'End Date (Jalali)': entry.end_time ? toJalaliDate(entry.end_time) : '',
                   'Duration (HH:MM:SS)': formatTime(entry.duration),
                   Hours: secondsToHours(entry.duration),
+                  PerHours: `90,000 T`,
+                  Price: `${secondsToHours(entry.duration) * 90000} T`,
                   Status: entry.is_active ? 'Active' : 'Completed',
                   'Payment Status': entry.paid ? 'Paid' : 'Unpaid',
             }));
@@ -205,19 +260,21 @@ export function TimeEntriesTable() {
                                                 <TableHead className="hidden md:table-cell">Date (Jalali)</TableHead>
                                                 <TableHead>Duration</TableHead>
                                                 <TableHead className="hidden md:table-cell">Status</TableHead>
+                                                <TableHead>Price</TableHead>
                                                 <TableHead>Paid</TableHead>
+                                                <TableHead>Actions</TableHead>
                                           </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                           {loading ? (
                                                 <TableRow>
-                                                      <TableCell colSpan={5} className="text-center py-8">
+                                                      <TableCell colSpan={6} className="text-center py-8">
                                                             Loading entries...
                                                       </TableCell>
                                                 </TableRow>
                                           ) : filteredEntries.length === 0 ? (
                                                 <TableRow>
-                                                      <TableCell colSpan={5} className="text-center py-8">
+                                                      <TableCell colSpan={6} className="text-center py-8">
                                                             No entries found.
                                                       </TableCell>
                                                 </TableRow>
@@ -265,6 +322,11 @@ export function TimeEntriesTable() {
                                                                   )}
                                                             </TableCell>
                                                             <TableCell>
+                                                                  <div className="text-xs text-muted-foreground">
+                                                                        {secondsToHours(entry.duration) * 90000} T
+                                                                  </div>
+                                                            </TableCell>
+                                                            <TableCell>
                                                                   <div className="flex items-center">
                                                                         <Checkbox
                                                                               checked={entry.paid}
@@ -295,12 +357,54 @@ export function TimeEntriesTable() {
                                                                         )}
                                                                   </div>
                                                             </TableCell>
+                                                            <TableCell>
+                                                                  <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        onClick={() => handleEditClick(entry)}
+                                                                  >
+                                                                        <Edit className="h-4 w-4" />
+                                                                  </Button>
+                                                            </TableCell>
                                                       </TableRow>
                                                 ))
                                           )}
                                     </TableBody>
                               </Table>
                         </div>
+
+                        {/* Edit Dialog */}
+                        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                              <DialogContent>
+                                    <DialogHeader>
+                                          <DialogTitle>Edit Time Entry</DialogTitle>
+                                          <DialogDescription>
+                                                Update the title and description of this time entry.
+                                          </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4">
+                                          <div className="space-y-2">
+                                                <Input
+                                                      placeholder="What are you working on?"
+                                                      value={editTitle}
+                                                      onChange={(e) => setEditTitle(e.target.value)}
+                                                />
+                                                <TiptapEditor
+                                                      content={editDescription}
+                                                      onChange={setEditDescription}
+                                                      placeholder="Add a description (optional)"
+                                                      className="mt-2"
+                                                />
+                                          </div>
+                                          <div className="flex justify-end gap-2">
+                                                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                                                      Cancel
+                                                </Button>
+                                                <Button onClick={handleSaveEdit}>Save Changes</Button>
+                                          </div>
+                                    </div>
+                              </DialogContent>
+                        </Dialog>
                   </CardContent>
             </Card>
       );
