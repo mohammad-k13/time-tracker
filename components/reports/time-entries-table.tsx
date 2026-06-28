@@ -195,7 +195,7 @@ export function TimeEntriesTable() {
                   'Duration (HH:MM:SS)': formatTime(entry.duration),
                   Hours: secondsToHours(entry.duration),
                   PerHours: `90,000 T`,
-                  Price: `${secondsToHours(entry.duration) * 90000} T`,
+                  Price: `${secondsToHours(entry.duration) * 140000} T`,
                   Status: entry.is_active ? 'Active' : 'Completed',
                   'Payment Status': entry.paid ? 'Paid' : 'Unpaid',
             }));
@@ -323,7 +323,7 @@ export function TimeEntriesTable() {
                                                             </TableCell>
                                                             <TableCell>
                                                                   <div className="text-xs text-muted-foreground">
-                                                                        {secondsToHours(entry.duration) * 90000} T
+                                                                        {secondsToHours(entry.duration) * 140000} T
                                                                   </div>
                                                             </TableCell>
                                                             <TableCell>
